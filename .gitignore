@@ -1,0 +1,5 @@
+__history
+
+*.dcu
+*.exe
+Source/Win64/Debug/TOCRDll.o
