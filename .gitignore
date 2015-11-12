@@ -3,3 +3,7 @@ __history
 *.dcu
 *.exe
 Source/Win64/Debug/TOCRDll.o
+Demo/Win64/Debug/ocrdemo.rsm
+Demo/Win64/Debug/ocrdemo.rsm
+Demo/Win64/Debug/ocrdemo.rsm
+__recovery
