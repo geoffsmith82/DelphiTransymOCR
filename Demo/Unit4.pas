@@ -13,6 +13,8 @@ type
     Button2: TButton;
     TransymOCR1: TTransymOCR;
     StatusBar1: TStatusBar;
+    OpenDialog1: TOpenDialog;
+    Button1: TButton;
     procedure TransymOCR1OCRCompleted(jjob: PObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -20,6 +22,7 @@ type
       Progress: Single);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -33,12 +36,25 @@ implementation
 
 {$R *.dfm}
 
+procedure TForm4.Button1Click(Sender: TObject);
+var
+  job : TOCRJob;
+begin
+  if(Opendialog1.Execute) then
+    begin
+     job := TransymOCR1.NewJob;
+     job.Filename := OpenDialog1.FileName;
+     job.info.ProcessOptions.SectioningOn := True;
+     job.Start;
+    end;
+end;
+
 procedure TForm4.Button2Click(Sender: TObject);
 var
   job : TOCRJob;
 begin
   job := TransymOCR1.NewJob;
-  job.Filename := 'C:\Program Files (x86)\Transym\TOCR\Viewer\Samples\Sample.tif';
+  job.Filename := ExtractFilePath(Application.ExeName) +'..\..\test.tif';
   job.Start;
 end;
 
