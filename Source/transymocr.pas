@@ -117,11 +117,11 @@ var
   ocr               : TTransymOCR;
 begin
   inherited;
+  self.NameThreadForDebugging('OCR Thread');
   FcurrentProcessing := TDictionary<Integer,TOCRJob>.Create;
  try
   ocr         := TTransymOCR(FocrObj);
   maxConCurrentJobs := ocr.GetSlotCount;
-
   repeat
     begin
 
@@ -327,6 +327,7 @@ var
   slotCount : LongInt;
   ret : Integer;
 begin
+  slotCount := 0;
   ret := TOCRGetJobDBInfo(slotCount);
   OutputDebugString(PChar('OCRGetJobDBInfo'+IntToStr(ret)+' slotCount:'+IntToStr(slotCount)));
   Result := slotCount;

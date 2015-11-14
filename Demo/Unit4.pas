@@ -42,8 +42,8 @@ var
 begin
   if(Opendialog1.Execute) then
     begin
-     job := TransymOCR1.NewJob;
-     job.Filename := OpenDialog1.FileName;
+     job                                  := TransymOCR1.NewJob;
+     job.Filename                         := OpenDialog1.FileName;
      job.info.ProcessOptions.SectioningOn := True;
      job.Start;
     end;
@@ -53,14 +53,14 @@ procedure TForm4.Button2Click(Sender: TObject);
 var
   job : TOCRJob;
 begin
-  job := TransymOCR1.NewJob;
+  job          := TransymOCR1.NewJob;
   job.Filename := ExtractFilePath(Application.ExeName) +'..\..\test.tif';
   job.Start;
 end;
 
 procedure TForm4.FormCreate(Sender: TObject);
 begin
-   TransymOCR1.OnOCRCompleted := TransymOCR1OCRCompleted;
+   TransymOCR1.OnOCRCompleted    := TransymOCR1OCRCompleted;
    TransymOCR1.OnOCRStatusUpdate := TransymOCR1OCRStatusUpdate;
    TransymOCR1.Start;
 end;
@@ -81,10 +81,10 @@ begin
   Memo1.Height := Height;
 end;
 
-procedure TForm4.TransymOCR1OCRCompleted(jjob: PObject);
+procedure TForm4.TransymOCR1OCRCompleted(jjob : PObject);
 var
-  job : TOCRJob;
-  I: Integer;
+  job       : TOCRJob;
+  I         : Integer;
   ocrString : String;
 begin
    job := TOCRJob(jjob);
