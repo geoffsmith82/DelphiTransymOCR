@@ -1,0 +1,8 @@
+{
+    "id": "{ABB3D2E0-7925-4C7A-8134-540638D7670F}",
+    "name": "Delphi Transym OCR",
+    "picture": "Logo.jpg",
+    "license_type": "MIT",
+    "license_file": "License.txt",
+    "platforms": "Win32;Win64",
+}
