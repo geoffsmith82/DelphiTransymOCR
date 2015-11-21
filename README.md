@@ -11,3 +11,5 @@ The Transym OCR SDK supports the Windows 32-bit and 64-bit platforms and this co
 Geoffrey Smith
 
 http://www.tysontechnology.com.au
+
+Delphinus-Support has recently been added.
