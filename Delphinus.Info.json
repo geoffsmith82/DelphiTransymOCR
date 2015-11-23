@@ -4,5 +4,5 @@
     "picture": "Logo.jpg",
     "license_type": "MIT",
     "license_file": "License.txt",
-    "platforms": "Win32;Win64",
+    "platforms": "Win32;Win64"
 }

@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{7F30BA29-24F3-4B7E-AFDF-16B002FA3412}</ProjectGuid>
         <MainSource>transymocr.dpk</MainSource>
-        <ProjectVersion>18.0</ProjectVersion>
+        <ProjectVersion>18.1</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>

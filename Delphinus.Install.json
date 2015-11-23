@@ -27,7 +27,8 @@
     "projects":
     [
         {
-            "project": "Source\\transymocr.dpk"
+            "project": "ocrproject.groupproj",
+			"compiler": 30
         }
     ]
 }

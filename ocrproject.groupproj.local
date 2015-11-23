@@ -2,6 +2,6 @@
 <BorlandProject>
 	<Transactions/>
 	<Default.Personality>
-		<Projects ActiveProject="C:\Programming\DelphiTransymOCR\Source\transymocr.dproj"/>
+		<Projects ActiveProject="C:\Programming\DelphiTransymOCR\Demo\ocrdemo.dproj"/>
 	</Default.Personality>
 </BorlandProject>
