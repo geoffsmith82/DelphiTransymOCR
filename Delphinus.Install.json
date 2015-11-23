@@ -17,8 +17,13 @@
     "source_folders":
     [
         {
+			"folder": "Demo",
+			"recursive": true,
+			"filter": "*.*;*"
+		},
+        {
             "folder": "source",
-            "base": "source",
+            "base": "",
             "recursive": true,
             "filter": "*;*.*"
         }
