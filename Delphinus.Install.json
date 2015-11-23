@@ -23,7 +23,7 @@
 		},
         {
             "folder": "Source",
-            "base": "Source",
+            "base": "source",
             "recursive": true,
             "filter": "*.*;*"
         }
