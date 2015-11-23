@@ -1,5 +1,5 @@
 {
-        "search_pathes": 
+    "search_pathes": 
     [
         {
             "pathes": "Source",
@@ -24,7 +24,7 @@
 		},
         {
             "folder": "Source",
-            "base": "Source",
+            "base": "",
             "recursive": true,
             "filter": "*.*;*"
         }
