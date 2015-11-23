@@ -26,7 +26,7 @@
     "projects":
     [
         {
-            "project": "source\\transymocr.proj",
+            "project": "source\\transymocr.dproj",
 			"compiler": 30
         }
     ]
