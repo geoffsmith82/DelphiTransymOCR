@@ -2,7 +2,7 @@ object Form4: TForm4
   Left = 0
   Top = 0
   Caption = 'Form4'
-  ClientHeight = 785
+  ClientHeight = 344
   ClientWidth = 843
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -54,10 +54,11 @@ object Form4: TForm4
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 766
+    Top = 325
     Width = 843
     Height = 19
     Panels = <>
+    ExplicitTop = 766
   end
   object Button1: TButton
     Left = 18

@@ -54,7 +54,8 @@ var
   job : TOCRJob;
 begin
   job          := TransymOCR1.NewJob;
-  job.Filename := ExtractFilePath(Application.ExeName) +'..\..\test.tif';
+//  job.Filename := ExtractFilePath(Application.ExeName) +'..\..\test.tif';
+  job.Filename := 'C:\Program Files (x86)\Transym\TOCR\Viewer\Samples\Sample.tif';
   job.Start;
 end;
 
