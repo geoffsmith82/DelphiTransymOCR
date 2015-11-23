@@ -3,6 +3,6 @@
     "name": "Delphi Transym OCR",
     "picture": "Logo.jpg",
     "license_type": "MIT",
-    "license_file": "License.txt",
+    "license_file": "license.txt",
     "platforms": "Win32;Win64"
 }
