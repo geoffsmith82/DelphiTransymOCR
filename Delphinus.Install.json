@@ -17,11 +17,6 @@
     "source_folders":
     [
         {
-			"folder": "Demo",
-			"recursive": false,
-			"filter": "*.*;*",
-		},
-        {
             "folder": "source",
             "recursive": true,
             "filter": "*.*;*"
