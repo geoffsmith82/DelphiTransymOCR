@@ -20,11 +20,10 @@
 			"folder": "Demo",
 			"recursive": false,
 			"filter": "*.*;*",
-			"base":""
 		},
         {
             "folder": "Source",
-            "base": "",
+            "base": "Source",
             "recursive": true,
             "filter": "*.*;*"
         }
