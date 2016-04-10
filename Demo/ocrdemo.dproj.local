@@ -2,8 +2,8 @@
 <BorlandProject>
 	<Transactions>
     <Transaction>2015/11/09 17:47:23.000.608,=C:\Users\Geoff\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
-    <Transaction>2015/11/09 17:56:58.000.704,C:\Users\Geoff\Documents\RAD Studio\Projects\Unit4.pas=C:\Programming\DelphiTransymOCR\Demo\Unit4.pas</Transaction>
-    <Transaction>2015/11/09 17:56:58.000.704,C:\Users\Geoff\Documents\RAD Studio\Projects\Unit4.dfm=C:\Programming\DelphiTransymOCR\Demo\Unit4.dfm</Transaction>
-    <Transaction>2015/11/09 17:57:11.000.232,C:\Users\Geoff\Documents\RAD Studio\Projects\Project5.dproj=C:\Programming\DelphiTransymOCR\Demo\ocrdemo.dproj</Transaction>
+    <Transaction>2015/11/09 17:56:58.000.704,C:\Programming\DelphiTransymOCR\Demo\Unit4.pas=C:\Users\Geoff\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>2015/11/09 17:56:58.000.704,C:\Programming\DelphiTransymOCR\Demo\Unit4.dfm=C:\Users\Geoff\Documents\RAD Studio\Projects\Unit4.dfm</Transaction>
+    <Transaction>2015/11/09 17:57:11.000.232,C:\Programming\DelphiTransymOCR\Demo\ocrdemo.dproj=C:\Users\Geoff\Documents\RAD Studio\Projects\Project5.dproj</Transaction>
   </Transactions>
 </BorlandProject>

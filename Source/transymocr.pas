@@ -4,57 +4,59 @@ interface
 
 uses
   System.SysUtils, System.Classes,TOCRDll,system.generics.collections,
-  vcl.dialogs,windows;
+  vcl.dialogs,windows,SyncObjs;
 
 type
-  TOnOCRComplete = procedure (job:PObject) of object;
-  TOnOCRStatusUpdate = procedure (job:PTOCRJobInfo2;JobStatus:Integer;Progress:Single) of object;
+
 
   TOCRResultsArray = Array [0..0] of TTOCRResultsItem;
   POCRResultsArray = ^TOCRResultsArray;
 
-  TOCRJob = class
-    private
-    FocrObj      : TObject;
-    FstrfileName : array [0..255] of AnsiChar;
-    FOCRResults  : T_ByteArray;
-    constructor Create(Sender: TObject);
+
+  IOCRJob = interface
+  ['{22749B12-EBF7-466C-8C67-AB73EF1D2A09}']
+    function getJobNo():Integer;
+    procedure setJobNo(JobNoToSet:Integer);
     function getFilename():AnsiString;
     procedure setFilename(str:AnsiString);
-    public
-    OCRResultsHeader : PTOCRResultsHeader;
-    OCRResultItems   : POCRResultsArray;
-    jobNo            : Integer;
-    info             : TTOCRJobInfo2;
     procedure Start();
-    published
-      property Filename : AnsiString read getFilename write setFilename;
+    function getJobInfo(): TTOCRJobInfo2;
+    procedure setJobInfo(infoToSet : TTOCRJobInfo2);
+    function getObject():TObject;
+    procedure setObject(obj:TObject);
+    function DoJob(): Integer;
+    function Initialize():Integer;
+    function Shutdown():Integer;
+    function GetResultSize(var size:Integer):Integer;
+    function GetJobStatus(var JobStatus:Integer;var Progress:Single;orient:Integer):Integer;
+    procedure GetResults();
+    property jobNo    : Integer read getJobNo write setJobNo;
+    property info     : TTOCRJobInfo2 read getJobInfo write setJobInfo;
+    property Filename : AnsiString read getFilename write setFilename;
+    property ExtraObject   : TObject read getObject write setObject;
   end;
 
-  TOCRThread = class (TThread)
-  private
-    FocrObj : TObject;
-    FcurrentProcessing: TDictionary<Integer, TOCRJob>;
-    procedure ScheduleJob();
-    procedure UpdateStatus();
-    procedure HandleCompletedJob(JobNo: Integer);
-  public
-    OnOCRComplete : TOnOCRComplete;
-    OnOCRStatusUpdate : TOnOCRStatusUpdate;
-    constructor Create(CreateSuspended: Boolean;Sender: TObject);
-    procedure Execute; override;
 
+  IOCRThread = interface
+  ['{A58E513C-014F-4168-A1ED-68D281492D87}']
+    procedure Start;
+    procedure Terminate;
   end;
 
+  TOnOCRComplete = procedure (var job:IOCRJob) of object;
+  TOnOCRStatusUpdate = procedure (var job:IOCRJob;JobStatus:Integer;Progress:Single) of object;
 
   TTransymOCR = class(TComponent)
   private
     { Private declarations }
     FOnOCRCompleted : TOnOCRComplete;
-    FWorker         : TOCRThread;
-    FQueue          : TQueue<TOCRJob>;
+    FQueueCS        : TCriticalSection;
+    FWorker         : TObject;
+    FQueue          : TQueue<IOCRJob>;
     FRunningJobs    : Integer;
+    FUpdateSpeed    : Integer;
     FOnOCRStatusUpdate : TOnOCRStatusUpdate;
+    procedure setUpdateSpeed(millisecs:Integer);
   protected
     { Protected declarations }
   public
@@ -63,49 +65,143 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Start();
-    function NewJob():TOCRJob;
-    function processJob(var job:TOCRJob): Boolean;
+    function NewJob():IOCRJob;
+    function processJob(var job:IOCRJob): Boolean;
   published
     { Published declarations }
+    property UpdateSpeed : Integer read FUpdateSpeed write setUpdateSpeed default 200;
     property OnOCRCompleted : TOnOCRComplete read FOnOCRCompleted write FOnOCRCompleted;
     property OnOCRStatusUpdate : TOnOCRStatusUpdate read FOnOCRStatusUpdate write FOnOCRStatusUpdate;
+  end;
+
+
+  TOCRJob = class(TInterfacedObject, IOCRJob)
+    private
+      Focr             : TTransymOCR;
+      FstrfileName     : array [0..255] of AnsiChar;
+      FOCRResults      : T_ByteArray;
+      FJobNo           : Integer;
+      FExtraObject     : TObject;
+      constructor Create(Sender: TTransymOCR);
+      function getFilename():AnsiString;
+      procedure setFilename(str:AnsiString);
+      function getJobNo():Integer;
+      procedure setJobNo(JobNoToSet:Integer);
+      function getJobInfo(): TTOCRJobInfo2;
+      procedure setJobInfo(infoToSet : TTOCRJobInfo2);
+      function getObject():TObject;
+      procedure setObject(obj:TObject);
+    public
+      Finfo            : TTOCRJobInfo2;
+      OCRResultsHeader : PTOCRResultsHeader;
+      OCRResultItems   : POCRResultsArray;
+      procedure Start();
+      function DoJob(): Integer;
+      function Initialize():Integer;
+      function Shutdown():Integer;
+      function GetResultSize(var size:Integer):Integer;
+      function GetJobStatus(var JobStatus:Integer;var Progress:Single;orient:Integer):Integer;
+      procedure GetResults();
+    published
+      property info        : TTOCRJobInfo2 read getJobInfo write setJobInfo;
+      property jobNo       : Integer read getJobNo write setJobNo;
+      property Filename    : AnsiString read getFilename write setFilename;
+      property ExtraObject : TObject read getObject write setObject;
+  end;
+
+  TOCRThread = class (TThread)
+//  private const
+//    objDestroyingFlag = Integer($80000000);
+//    function GetRefCount: Integer; inline;
+  private
+//    [Volatile] FRefCount: Integer;
+    Focr : TTransymOCR;
+    FcurrentProcessing: TDictionary<Integer, IOCRJob>;
+    function ScheduleJob():Integer;
+    function UpdateStatus(): Integer;
+    procedure HandleCompletedJob(JobNo: Integer);
+//    function _AddRef: Integer; stdcall;
+//    function _Release: Integer; stdcall;
+//    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+  public
+//    class function NewInstance: TObject; override;
+//    property RefCount: Integer read GetRefCount;
+    constructor Create(CreateSuspended: Boolean;Sender: TTransymOCR);
+    procedure Execute; override;
   end;
 
 procedure Register;
 
 implementation
 
+uses math;
+
 procedure Register;
 begin
   RegisterComponents('Tyson Technology', [TTransymOCR]);
 end;
 
+{function TOCRThread.GetRefCount: Integer;
+begin
+  Result := FRefCount and not objDestroyingFlag;
+end;
 
-procedure TOCRThread.UpdateStatus();
+// Set an implicit refcount so that refcounting during construction won't destroy the object.
+class function TOCRThread.NewInstance: TObject;
+begin
+  Result := inherited NewInstance;
+  TOCRThread(Result).FRefCount := 1;
+end;
+
+
+
+function TOCRThread.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result:= S_OK
+  else
+    Result:= E_NOINTERFACE;
+end;
+
+function TOCRThread._AddRef: Integer;
+begin
+  Result:= -1;
+end;
+
+function TOCRThread._Release: Integer;
+begin
+  Result:= -1;
+end;
+}
+
+function TOCRThread.UpdateStatus():Integer;
 var
-  i         : Integer;
   progress  : Single;
   orient    : Integer;
   JobNo     : Integer;
   JobStatus : Integer;
-  ocr       : TTransymOCR;
-  job       : TOCRJob;
+  job       : IOCRJob;
+  key       : Integer;
+  value     : Integer;
 begin
-  ocr := TTransymOCR(FocrObj);
-  for i := 0 to FcurrentProcessing.Count-1 do
+  Result := 0;
+  value := 0;
+  for key in FcurrentProcessing.Keys do
     begin
-      JobNo := i;
-      job := FcurrentProcessing[i];
-      TOCRGetJobStatusEx (JobNo,JobStatus,Progress,orient);
+      job := TOCRJob(FcurrentProcessing[key]);
+      if(job=nil) then continue;
+      job.GetJobStatus(jobStatus,Progress,orient);
       Synchronize(procedure
          begin
-           if(Assigned(ocr.FOnOCRStatusUpdate)) then
+           if(Assigned(Focr.FOnOCRStatusUpdate)) then
              begin
-               ocr.FOnOCRStatusUpdate(@job.info,JobStatus,Progress);
+               Focr.FOnOCRStatusUpdate(job,JobStatus,Progress);
+               value := max(value,Trunc(Progress*100));
              end;
          end
       );
     end;
+  Result := value;
 end;
 
 procedure TOCRThread.Execute;
@@ -114,34 +210,53 @@ var
   ret               : Integer;
   JobNo             : LongInt;
   maxConcurrentJobs : Integer;
-  ocr               : TTransymOCR;
+  queueLength       : Integer;
+  key               : Integer;
+  parameter         : Integer;
+  saveValue,value   : Integer;
+  JobNoSet          : Integer;
+  scheduleRet       : Integer;
 begin
   inherited;
   self.NameThreadForDebugging('OCR Thread');
-  FcurrentProcessing := TDictionary<Integer,TOCRJob>.Create;
+  FcurrentProcessing := TDictionary<Integer,IOCRJob>.Create;
+
+   JobNoSet  := TOCRConfig_DefaultJob;
+   parameter := 0;//TOCRConfig_Dll_Errormode;
+   value     := TOCRErrorMode_None;
+
+   TOCRSetErrorMode(JobNoSet,0);
+   OutputDebugString(PChar('TOCRSetConfig='+IntToStr(ret)));
+
  try
-  ocr         := TTransymOCR(FocrObj);
-  maxConCurrentJobs := ocr.GetSlotCount;
+  maxConCurrentJobs := Focr.GetSlotCount;
   repeat
     begin
+    if(Terminated) then break;
 
-   // if(FcurrentProcessing.Count<maxConCurrentJobs) then
-      begin
-        ScheduleJob();
-      end;
+    scheduleRet := ScheduleJob();
 
     if(FcurrentProcessing.Count=0) then
       begin
         Sleep(500);  // Wait half second before checking queue again
         continue;
       end;
-     Sleep(300);
-    UpdateStatus();
-     Sleep(500);
-    UpdateStatus();
+
+      Focr.FQueueCS.Enter;
+       queueLength := Focr.FQueue.Count;
+      Focr.FQueueCS.Leave;
+    if((queueLength>0) and (scheduleRet=0)) then
+      begin
+        continue;
+      end;
 
      WaitAnyStatus := 0;
      JobNo         := 0;
+
+     repeat
+       if(Terminated) then break;
+       Sleep(Focr.UpdateSpeed);
+     until UpdateStatus()>95;
 
      ret := TOCRWaitForAnyJob(WaitAnyStatus,JobNo);
      OutputDebugString(PChar('WaitForAnyJob='+IntToStr(ret)+' Status:'+IntToStr(WaitAnyStatus)+' JobNo:'+IntToStr(JobNo)));
@@ -149,11 +264,21 @@ begin
        begin
          continue;
        end;
-   {  if(WaitAnyStatus=TOCRWait_NoJobsFound) then // Shouldn't get here
+     if(WaitAnyStatus=TOCRWait_NoJobsFound) then // means all jobs have finished
        begin
-         Sleep(500);   // Wait half second before checking queue again
+         if(FcurrentProcessing.Count>0) then
+           begin
+             if(UpdateStatus()=100) then
+               begin
+               for key in FcurrentProcessing.Keys do
+                 begin
+                   HandleCompletedJob(FcurrentProcessing[Key].JobNo);
+                 end;
+               end;
+           end;
+       //  Sleep(500);   // Wait half second before checking queue again
          continue;
-       end; }
+       end;
  //     if(WaitAnyStatus<>TOCRWait_Ok) then continue;
     HandleCompletedJob(JobNo);
     end
@@ -165,77 +290,136 @@ end;
 
 procedure TOCRThread.HandleCompletedJob(JobNo: Integer);
 var
-  job: TOCRJob;
+  job    : TOCRJob;
+  intJob : IOCRJob;
   OCRJobResultsInf : Integer;
   ret : Integer;
-  j : Integer;
 begin
   job := nil;
   OutputDebugString(PChar('Handling Completed Job ['+IntToStr(JobNo)+']'));
-  if (Assigned(OnOCRComplete)) then
+  if (Assigned(Focr.FOnOCRCompleted)) then
     begin
-     job := FcurrentProcessing.Items[jobNo];
-     FcurrentProcessing.Remove(jobNo);
-     ret := TOCRGetJobResults(jobNo, OCRJobResultsInf, Nil);
-     OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)));
-     SetLength(job.FOCRResults, OCRJobResultsInf+1);
-     ret := TOCRGetJobResults(jobNo, OCRJobResultsInf, @job.FOCRResults[0]);
-     OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)));
-     job.OCRResultsHeader := @job.FOCRResults[0];
-     OutputDebugString(PChar('NumItemsCount:'+IntToStr(job.OCRResultsHeader.NumItems)));
-     job.OCRResultItems   := POCRResultsArray(Integer(@job.FOCRResults[0])+sizeof(TTOCRResultsHeader));
-     for j := 0 to job.OCRResultsHeader.NumItems-1 do
-       begin
-         OutputDebugString(PChar('Char:' +Char(TTOCRResultsItem(job.OCRResultItems[j]).OCRCha)));
-       end;
-
-     Synchronize(procedure
+      job := TOCRJob(FcurrentProcessing.Items[jobNo]);
+      job.GetResults;
+      Synchronize(procedure
       begin
-        OnOCRComplete(PObject(job));
+        intJob := FcurrentProcessing.Items[jobNo];
+        Focr.FOnOCRCompleted(intJob);
       end);
+     FcurrentProcessing.Remove(jobNo);
         if (Assigned(job)) then
           begin
-            TOCRShutDown(job.jobNo);
+            job.Shutdown;
           end;
     end;
 end;
 
-procedure TOCRThread.ScheduleJob();
+function TOCRThread.ScheduleJob():Integer;
 var
   queueLength : Integer;
-  ocr         : TTransymOCR;
   job         : TOCRJob;
   ret         : Integer;
+  parameter   : Integer;
+  value       : Integer;
+  JobNoSet    : Integer;
 begin
-  ocr := TTransymOCR(FocrObj);
+  Result := TOCR_Ok;
   job := nil;
-  Synchronize(procedure
-     begin
-       queueLength := ocr.FQueue.Count;
+  Focr.FQueueCS.Enter;
+       queueLength := Focr.FQueue.Count;
        if(queueLength>0) then
           begin
-            job := ocr.FQueue.Dequeue;
+            job := TOCRJob(Focr.FQueue.Peek);
           end;
-     end);
+
 if(job<>nil) then
  begin
-  ret := TOCRInitialise(job.jobNo);
-  OutputDebugString(PChar('OCRInitialise='+IntToStr(ret)+'| JobNo:'+IntToStr(job.jobNo)));
-
-  // need to remove jobNo from currentProcessing
-  FcurrentProcessing.Remove(job.jobNo);
-  FcurrentProcessing.Add(job.jobNo,job);
-
-  ret := TOCRDoJob2 (job.jobNo,job.info);
-  OutputDebugString(PChar('OCRDoJob2='+IntToStr(ret)+'| JobNo:'+IntToStr(job.jobNo)));
-  if(ret<>TOCR_Ok) then
+   ret := job.Initialize;//    TOCRInitialise(jobNo);
+   if(ret=0) then // Success
      begin
-       ret := TOCRShutDown(job.jobNo);
-       OutputDebugString(PChar('OCRShutDown='+IntToStr(ret)));
+         Focr.FQueue.Dequeue;
+     end;
+   Focr.FQueueCS.Leave;
+
+   if(Ret=TOCRErr_NoFreeJobSlots) then
+     begin
+       job.Shutdown;
+       Result := TOCRErr_NoFreeJobSlots;
+       Exit;
+     end;
+   // need to remove jobNo from currentProcessing
+//   FcurrentProcessing.Remove(job.jobNo);
+   FcurrentProcessing.Add(job.jobNo,job);
+
+   ret := job.DoJob();// TOCRDoJob2 (job.jobNo,job.Finfo);
+   OutputDebugString(PChar('OCRDoJob2='+IntToStr(ret)+'| JobNo:'+IntToStr(job.jobNo)));
+   if(ret<>TOCR_Ok) then
+     begin
+       ret := job.Shutdown;
+       //TOCRShutDown(job.jobNo);
        FreeAndNil(job);
      end;
- end;
+ end
+else
+  begin
+       Focr.FQueueCS.Leave;
+  end;
 end;
+
+function TOCRJob.Initialize():Integer;
+begin
+ OutputDebugString(PChar('OCRInitialise=Addr:'+IntToStr(Integer(@Self))));
+ Result := TOCRInitialise(FjobNo);
+ OutputDebugString(PChar('OCRInitialise='+IntToStr(Result)+'| JobNo:'+IntToStr(FjobNo)+'|Addr:'+IntToStr(Integer(@Self))));
+end;
+
+function TOCRJob.Shutdown():Integer;
+begin
+if(FJobNo=-1) then
+  begin
+   OutputDebugString(PChar('-OCRShutDownAddr:'+IntToStr(Integer(@Self))));
+   Exit;
+  end;
+ OutputDebugString(PChar('OCRShutDown=Addr:'+IntToStr(Integer(@Self))));
+ Result := TOCRShutDown(FjobNo);
+ OutputDebugString(PChar('OCRShutDown='+IntToStr(Result)+'JobNo:'+IntToStr(FjobNo)+'|Addr:'+IntToStr(Integer(@Self))));
+end;
+
+
+function TOCRJob.DoJob(): Integer;
+begin
+ OutputDebugString(PChar('TOCRDoJob2=Addr:'+IntToStr(Integer(@Self))));
+  Result := TOCRDoJob2 (FjobNo,Finfo);
+ OutputDebugString(PChar('TOCRDoJob2='+IntToStr(Result)+'JobNo:'+IntToStr(FjobNo)+'|Addr:'+IntToStr(Integer(@Self))));
+
+end;
+
+function TOCRJob.GetResultSize(var size:Integer):Integer;
+var
+  OCRJobResultsInf : Integer;
+  ret : Integer;
+begin
+  Result := TOCRGetJobResults(FjobNo, OCRJobResultsInf, Nil);
+  OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
+  size := OCRJobResultsInf;
+end;
+
+procedure TOCRJob.GetResults();
+var
+  OCRJobResultsInf : Integer;
+  ret : Integer;
+begin
+  //ret := TOCRGetJobResults(jobNo, OCRJobResultsInf, Nil);
+  ret := GetResultSize(OCRJobResultsInf);
+  OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
+  SetLength(FOCRResults, OCRJobResultsInf+1);
+  ret := TOCRGetJobResults(FjobNo, OCRJobResultsInf, @FOCRResults[0]);
+  OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
+  OCRResultsHeader := @FOCRResults[0];
+  OutputDebugString(PChar('NumItemsCount:'+IntToStr(OCRResultsHeader.NumItems)+'|Addr:'+IntToStr(Integer(@Self))));
+  OCRResultItems   := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
+end;
+
 
 function TOCRJob.getFilename():AnsiString;
 begin
@@ -246,79 +430,146 @@ procedure TOCRJob.setFilename(str: AnsiString);
 begin
   FillChar(FstrfileName, SizeOf(FstrfileName), 0);
   StrPCopy(FstrfileName, str+#0);
-  info.InputFile := FstrfileName;
+  Finfo.InputFile := FstrfileName;
   if ExtractFileExt(UpperCase(str))='.TIF' Then
-            info.JobType  := TOCRJobType_TiffFile
+            Finfo.JobType  := TOCRJobType_TiffFile
   else if ExtractFileExt(UpperCase(str))='.BMP' Then
-            info.JobType  := TOCRJobType_DibFile;
+            Finfo.JobType  := TOCRJobType_DibFile;
 end;
 
-constructor TOCRJob.Create(Sender:TObject);
+function TOCRJob.getJobNo():Integer;
+begin
+  Result := FJobNo;
+end;
+
+procedure TOCRJob.setJobNo(JobNoToSet:Integer);
+begin
+  FJobNo := JobNoToSet;
+end;
+
+function TOCRJob.getJobInfo(): TTOCRJobInfo2;
+begin
+  Result := FInfo;
+end;
+
+procedure TOCRJob.setJobInfo(infoToSet : TTOCRJobInfo2);
+begin
+  Finfo := infoToSet;
+end;
+
+constructor TOCRJob.Create(Sender:TTransymOCR);
 var
   i : Integer;
 begin
-  FocrObj := Sender;
-  info.StructId := 0;
-  info.JobType  := 0;
-  info.hMMF     := nil;
-  info.PageNo   := 0;
-  info.ProcessOptions.StructId        := 0;
-  info.ProcessOptions.InvertWholePage := False;
-  info.ProcessOptions.DeskewOff       := False;
-  info.ProcessOptions.Orientation     := 0;
-  info.ProcessOptions.NoiseRemoveOff  := False;
-  info.ProcessOptions.LineRemoveOff   := False;
-  info.ProcessOptions.DeshadeOff      := False;
-  info.ProcessOptions.InvertOff       := False;
-  info.ProcessOptions.SectioningOn    := False;
-  info.ProcessOptions.MergeBreakOff   := False;
-  info.ProcessOptions.LineRejectOff   := False;
-  info.ProcessOptions.CharacterRejectOff := False;
-  info.ProcessOptions.LexOff             := False;
-  for i := 0 to 255 do info.ProcessOptions.DisableCharacter[i] := False;
+  Focr           := Sender;
+  jobNo          := 0;
+  Finfo.StructId := 0;
+  Finfo.JobType  := 0;
+  Finfo.hMMF     := nil;
+  Finfo.PageNo   := 0;
+  Finfo.ProcessOptions.StructId           := 0;
+  Finfo.ProcessOptions.InvertWholePage    := False;
+  Finfo.ProcessOptions.DeskewOff          := False;
+  Finfo.ProcessOptions.Orientation        := 0;
+  Finfo.ProcessOptions.NoiseRemoveOff     := False;
+  Finfo.ProcessOptions.LineRemoveOff      := False;
+  Finfo.ProcessOptions.DeshadeOff         := False;
+  Finfo.ProcessOptions.InvertOff          := False;
+  Finfo.ProcessOptions.SectioningOn       := False;
+  Finfo.ProcessOptions.MergeBreakOff      := False;
+  Finfo.ProcessOptions.LineRejectOff      := False;
+  Finfo.ProcessOptions.CharacterRejectOff := False;
+  Finfo.ProcessOptions.LexOff             := False;
+  for i := 0 to 255 do Finfo.ProcessOptions.DisableCharacter[i] := False;
 end;
+
+
+function TOCRJob.GetJobStatus(var JobStatus:Integer;var Progress:Single;orient:Integer):Integer;
+begin
+  Result := TOCRGetJobStatusEx (FJobNo,JobStatus,Progress,orient);
+end;
+
+
+function TOCRJob.getObject():TObject;
+begin
+  Result := FExtraObject;
+end;
+
+procedure TOCRJob.setObject(obj:TObject);
+begin
+  FExtraObject := obj;
+end;
+
 
 procedure TOCRJob.Start();
+var
+  job : IOCRJob;
 begin
-  TTransymOCR(FocrObj).processJob(self);
+  job := Self;
+  Focr.processJob(job);
 end;
 
-constructor TOCRThread.Create(CreateSuspended: Boolean;Sender: TObject);
+constructor TOCRThread.Create(CreateSuspended: Boolean;Sender: TTransymOCR);
 begin
   inherited Create(CreateSuspended);
-  FocrObj := Sender;
+  Focr := Sender;
 end;
 
 constructor TTransymOCR.Create(AOwner: TComponent);
 begin
   inherited;
   FRunningJobs := 0;
-  FQueue := TQueue<TOCRJob>.Create;
-  FWorker := TOCRThread.Create(True,Self);
+  FQueueCS     := TCriticalSection.Create;
+  FQueue       := TQueue<IOCRJob>.Create;
+  FWorker      := TOCRThread.Create(True,Self);
 end;
 
 
-function TTransymOCR.NewJob():TOCRJob;
+procedure TTransymOCR.setUpdateSpeed(millisecs:Integer);
+begin
+  // ensure update speed is between .1 and 5 seconds
+  FUpdateSpeed := min(max(100,millisecs),5000);
+end;
+
+function TTransymOCR.NewJob():IOCRJob;
 begin
   Result := TOCRJob.Create(Self);
 end;
 
-function TTransymOCR.processJob(var job:TOCRJob):Boolean;
+function TTransymOCR.processJob(var job:IOCRJob):Boolean;
 begin
   Result := False;
+  FQueueCS.Enter;
   FQueue.Enqueue(job);
+  FQueueCS.Leave;
 end;
 
 procedure TTransymOCR.Start();
+var
+  slotCount : Integer;
 begin
-  FWorker.OnOCRComplete := FOnOCRCompleted;
-  FWorker.Start;
+  slotCount := 2;
+  TOCRThread(FWorker).Start;
 end;
 
 destructor TTransymOCR.Destroy;
+var
+  slotCount : Integer;
 begin
   inherited;
-  FWorker.Terminate;
+  slotCount := 2;
+//  Work := TOCRThread(FWorker);
+  TOCRThread(FWorker).FreeOnTerminate := False;
+  TOCRThread(FWorker).Terminate;
+  TOCRThread(FWorker).WaitFor;
+  FreeAndNil(TOCRThread(FWorker));
+if(FQueue.Count>0) then
+ begin
+  repeat
+    FQueue.Dequeue;
+  until FQueue.Count=0;
+ end;
+//  Sleep(200);
   FreeAndNil(FQueue);
 end;
 
@@ -331,6 +582,7 @@ begin
   ret := TOCRGetJobDBInfo(slotCount);
   OutputDebugString(PChar('OCRGetJobDBInfo'+IntToStr(ret)+' slotCount:'+IntToStr(slotCount)));
   Result := slotCount;
+  Result := 2;
 end;
 
 end.

@@ -33,6 +33,9 @@ const
   TOCRMaxPPM                          = 78740;   // max pixels per meter
   TOCRMinPPM                          = 984;     // min pixels per metre
 
+  TOCRConfig_DefaultJob               = -1;
+  TOCRConfig_Dll_Errormode            = 0;
+
   // Setting for JobNo for TOCRSetErrorMode and TOCRGetErrorMode
   TOCRDefErrorMode                    = -1;      // set/get the API error mode for all jobs
 
@@ -449,6 +452,8 @@ Function TOCRInitialise       (var JobNo: LongInt): LongInt;                    
 Function TOCRShutdown         (JobNo: LongInt): LongInt;                                                                             StdCall;
 Function TOCRSetErrorMode     (JobNo: LongInt; ErrorMode: LongInt): LongInt;                                                         StdCall;
 Function TOCRGetErrorMode     (JobNo: LongInt; var ErrorMode: LongInt): LongInt;                                                     StdCall;
+Function TOCRGetConfig        (var JobNo: LongInt;var Parameter: LongInt;var Value:LongInt):LongInt;
+Function TOCRSetConfig        (var JobNo: LongInt;var Parameter: LongInt;var Value:LongInt):LongInt;
 Function TOCRGetJobDBInfo     (var JobSlotInf: LongInt): LongInt;                                                                        StdCall;
 Function TOCRGetLicenceInfo   (var NumberOfJobSlots, Volume, Time, Remaining: LongInt): LongInt;                                     StdCall;
 Function TOCRGetLicenceInfoEx (JobNo: LongInt; License: PChar; var Volume: LongInt; var Time: LongInt; var Remaining: LongInt; var Features: LongInt): LongInt; StdCall;
@@ -475,6 +480,8 @@ Function TOCRInitialise      ; External TOCRDLLName;
 Function TOCRShutdown        ; External TOCRDLLName;
 Function TOCRSetErrorMode    ; External TOCRDLLName;
 Function TOCRGetErrorMode    ; External TOCRDLLName;
+Function TOCRGetConfig       ; External TOCRDLLName;
+Function TOCRSetConfig       ; External TOCRDLLName;
 Function TOCRGetJobDBInfo    ; External TOCRDLLName;
 Function TOCRGetLicenceInfo  ; External TOCRDLLName;
 Function TOCRGetLicenceInfoEx; External TOCRDLLName;
