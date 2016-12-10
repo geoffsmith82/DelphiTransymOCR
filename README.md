@@ -8,7 +8,7 @@ The component uses a separate thread to enable the UI to remain responsive throu
 
 The Transym OCR SDK supports the Windows 32-bit and 64-bit platforms and this component supports both as well.
 
-![Alt text](geoffsmith82/DelphiTransymOCR/master/screenshot1.png "Demo Screenshot")
+![Alt text](screenshot1.png "Demo Screenshot")
 
 Geoffrey Smith
 
