@@ -34,6 +34,8 @@ requires
 
 contains
   transymocr in 'transymocr.pas',
-  TOCRDLL in 'TOCRDLL.pas';
+  TOCRDLL in 'TOCRDLL.pas',
+  transym.job in 'transym.job.pas',
+  transym.int.job in 'transym.int.job.pas';
 
 end.

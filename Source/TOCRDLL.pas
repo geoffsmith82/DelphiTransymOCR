@@ -58,6 +58,7 @@ const
   TOCRJobType_DibFile                 = 1;       // TOCRJOBINFO.InputFile specifies a dib (bmp) file
   TOCRJobType_DibClipBoard            = 2;       // clipboard contains a dib (clipboard format CF_DIB)
   TOCRJobType_MMFileHandle            = 3;       // TOCRJOBINFO.PageNo specifies a handle to a memory mapped DIB file
+  TOCRJobType_PdfFile                 = 4;       // TOCRJOBINFO.InputFile specifies a pdf file
 
   // Settings for TOCRJOBINFO.Orientation
   TOCRJobOrient_Auto                  = 0;       // detect orientation and rotate automatically
@@ -375,6 +376,8 @@ Type
     LexOff                      : WordBool;      // If this flag is set the Lexicon will not be used to improve character recognition.
     DisableCharacter: Array[0..255] Of WordBool; // If any of these flags are set then the character with the respective number will not be considered when trying to find a match.
   End; // TTOCRProcessOptions
+
+
   PTOCRJobInfo=^TTOCRJobInfo;
   TTOCRJobInfo= Record
     StructId                    : LongInt;             // This should be set to 0.
@@ -416,9 +419,13 @@ Type
     YDim                        : SmallInt; // The height of the character in pixels.
   End; // TTOCRResultsItem
   PTOCRResults=^TTOCRResults;
-  TTOCRResults= Record
-    Header                      : TTOCRResultsHeader;        // See description for TTOCRResultsHeader
-    Items                       : Array Of TTOCRResultsItem; // See description for TTOCRResultsItem
+
+  TTOCRResultsItems= Array Of TTOCRResultsItem;
+
+  TTOCRResults= packed Record
+    Header                      : PTOCRResultsHeader;        // See description for TTOCRResultsHeader
+    padd : array [0..11] of byte;
+    Items                       : TTOCRResultsItems;// Array Of TTOCRResultsItem; // See description for TTOCRResultsItem
   End; // TTOCRResults
   PTOCRResultsItemExAlt=^TTOCRResultsItemExAlt;
   TTOCRResultsItemExAlt= Record
@@ -446,6 +453,14 @@ Type
 Type
   P_ByteArray=^T_ByteArray;
   T_ByteArray= Array Of Byte;
+
+
+  TOCRResultsArray = Array [0..0] of TTOCRResultsItem;
+  POCRResultsArray = ^TOCRResultsArray;
+
+
+  TOCRResultsArrayEx = Array [0..0] of TTOCRResultsItemEx;
+  POCRResultsArrayEx = ^TOCRResultsArrayEx;
 
 {————— Function declarations —————————————————————————————————————————————————————————————————————————————————————————————————}
 Function TOCRInitialise       (var JobNo: LongInt): LongInt;                                                                         StdCall;
