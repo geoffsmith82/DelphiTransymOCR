@@ -5,12 +5,12 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, transymocr, Vcl.StdCtrls,tocrdll,
-  Vcl.ComCtrls,system.generics.collections, Vcl.FileCtrl;
+  Vcl.ComCtrls,system.generics.collections, Vcl.FileCtrl,transym.int.job;
 
 type
   TForm4 = class(TForm)
     Memo1: TMemo;
-    TransymOCR1: TTransymOCR;
+    TransymOCR: TTransymOCR;
     StatusBar1: TStatusBar;
     OpenDialog1: TOpenDialog;
     Button1: TButton;
@@ -20,7 +20,7 @@ type
     procedure TransymOCR1OCRCompleted(var job:IOCRJob);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
-    procedure TransymOCR1OCRStatusUpdate(var job:IOCRJob; JobStatus: Integer;
+    procedure TransymOCROCRStatusUpdate(var job:IOCRJob; JobStatus: Integer;
       Progress: Single);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -39,18 +39,22 @@ implementation
 
 {$R *.dfm}
 
+uses transym.job;
+
 procedure TForm4.Button1Click(Sender: TObject);
 var
-  job  : TOCRJob;
+  job  : IOCRJob;
   item : TListItem;
+  jobdata :PTOCRJobInfo2;
 begin
   if(Opendialog1.Execute) then
     begin
-     job                                   := TOCRJob(TransymOCR1.NewJob);
+     job                                   := TransymOCR.NewJob;
      job.Filename                          := OpenDialog1.FileName;
      item := Listview1.Items.Add;
      item.Caption := ExtractFilename(job.Filename) +' ' + 'Queued';
-     job.Finfo.ProcessOptions.SectioningOn := True;
+     job.GetJobData(jobdata);
+     jobData.ProcessOptions.SectioningOn := True;
      job.ExtraObject := item;
      job.Start;
     end;
@@ -61,7 +65,7 @@ var
   job  : IOCRJob;
   item : TListItem;
 begin
-  job             := TOCRJob(TransymOCR1.NewJob);
+  job             := TransymOCR.NewJob;
   job.Filename    := 'C:\Program Files (x86)\Transym\TOCR\Viewer\Samples\Sample.tif';
   item            := Listview1.Items.Add;
   item.Caption    := ExtractFilename(job.Filename) +' ' + 'Queued';
@@ -71,10 +75,10 @@ end;
 
 procedure TForm4.Button3Click(Sender: TObject);
 var
-  job          : TOCRJob;
+  job          : IOCRJob;
   item         : TListItem;
-  item2        : TListItem;
   searchResult : TSearchRec;
+  jobdata      : PTOCRJobInfo2;
 begin
   findfirst(IncludeTrailingPathDelimiter(DirectoryListBox1.Directory)+'*',faAnyFile,searchResult);
  try
@@ -82,9 +86,10 @@ begin
     if((UpperCase(ExtractFileExt(searchResult.Name))='.BMP') or
        (UpperCase(ExtractFileExt(searchResult.Name))='.TIF')) then
       begin
-        job              := TOCRJob(TransymOCR1.NewJob);
+        job              := TransymOCR.NewJob;
         job.Filename     := IncludeTrailingPathDelimiter(DirectoryListBox1.Directory)+searchResult.Name;
-        job.Finfo.ProcessOptions.SectioningOn := True;
+        job.GetJobData(jobdata);
+        jobdata.ProcessOptions.SectioningOn := True;
         item             := Listview1.Items.Add;
         item.Caption     := ExtractFilename(job.Filename) +' ' + 'Queued';
         job.ExtraObject  := item;
@@ -100,9 +105,9 @@ end;
 
 procedure TForm4.FormCreate(Sender: TObject);
 begin
-  TransymOCR1.OnOCRCompleted    := TransymOCR1OCRCompleted;
-  TransymOCR1.OnOCRStatusUpdate := TransymOCR1OCRStatusUpdate;
-  TransymOCR1.Start;
+  TransymOCR.OnOCRCompleted    := TransymOCR1OCRCompleted;
+  TransymOCR.OnOCRStatusUpdate := TransymOCROCRStatusUpdate;
+  TransymOCR.Start;
 end;
 
 procedure TForm4.FormResize(Sender: TObject);
@@ -128,31 +133,42 @@ end;
 
 procedure TForm4.TransymOCR1OCRCompleted(var job:IOCRJob);
 var
-  jjob      : TOCRJob;
   I         : Integer;
   ocrString : String;
   lines     : TStringList;
+  results   : PTOCRResultsHeader;
+  header    : PTOCRResultsHeader;
+  items     : POCRResultsArray;
 begin
-  jjob  := TOCRJob(job);
   lines := TStringList.Create;
   try
    Memo1.Lines.Add('Complete Called');
    Memo1.Lines.Add('Source Filename: '+job.Filename);
    ocrString := '';
-   for I := 0 to jjob.OCRResultsHeader.NumItems-1 do
+   job.GetResults3(header,items);
+
+   // results := PTOCRResultsHeader(header);
+ //  items := TOCRJob(job).FOCRResultItems;
+  // header := TOCRJob(job).FOCRResultsHeader;
+  // items := TOCRJob(job).FOCRResultItemsEx;
+  // results := TOCRJob(job).FOCRResultsHeaderEx;
+ //  results := header;
+
+   for I := 0 to header.NumItems-1 do
      begin
-      if((jjob.OCRResultItems[i].OCRCha=13) or
-         (jjob.OCRResultItems[i].OCRCha=10)) then
+      if((items[i].OCRCha=13) or
+         (items[i].OCRCha=10)) then
         begin
           lines.Add(ocrString);
           ocrString := '';
         end
       else
         begin
-          ocrString := ocrString + Char(jjob.OCRResultItems[i].OCRCha);
+          ocrString := ocrString + Char(Items[i].OCRCha);
         end;
      end;
      Memo1.Lines.AddStrings(lines);
+     Memo1.Lines.Add(ocrString);
      SendMessage(Memo1.Handle, EM_LINESCROLL, 0,Memo1.Lines.Count);
    if(assigned(job.ExtraObject)) then
      begin
@@ -163,8 +179,7 @@ begin
   end;
 end;
 
-procedure TForm4.TransymOCR1OCRStatusUpdate(var job:IOCRJob;
-  JobStatus: Integer; Progress: Single);
+procedure TForm4.TransymOCROCRStatusUpdate(var job:IOCRJob; JobStatus: Integer; Progress: Single);
 begin
   if(assigned(job.ExtraObject)) then
     begin

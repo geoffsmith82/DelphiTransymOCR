@@ -1,6 +1,7 @@
 program ocrdemo;
 
 uses
+  {$IFDEF EurekaLog}
   EMemLeaks,
   EResLeaks,
   EDialogWinAPIMSClassic,
@@ -11,6 +12,7 @@ uses
   EMapWin32,
   EAppVCL,
   ExceptionLog7,
+  {$ENDIF EurekaLog}
   Vcl.Forms,
   Unit4 in 'Unit4.pas' {Form4};
 

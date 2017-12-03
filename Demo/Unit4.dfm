@@ -97,6 +97,7 @@ object Form4: TForm4
     Font.Name = 'Tahoma'
     Font.Style = []
     IconOptions.WrapText = False
+    ReadOnly = True
     RowSelect = True
     ParentDoubleBuffered = False
     ParentFont = False
@@ -117,15 +118,15 @@ object Form4: TForm4
     ParentFont = False
     TabOrder = 5
   end
-  object TransymOCR1: TTransymOCR
+  object TransymOCR: TTransymOCR
     UpdateSpeed = 100
     OnOCRCompleted = TransymOCR1OCRCompleted
-    OnOCRStatusUpdate = TransymOCR1OCRStatusUpdate
+    OnOCRStatusUpdate = TransymOCROCRStatusUpdate
     Left = 184
     Top = 56
   end
   object OpenDialog1: TOpenDialog
-    Filter = 'Bitmap Files|*.bmp|Tiff Files|*.tif'
+    Filter = 'Bitmap Files|*.bmp|Tiff Files|*.tif|Pdf Files|*.pdf'
     Left = 240
     Top = 80
   end
