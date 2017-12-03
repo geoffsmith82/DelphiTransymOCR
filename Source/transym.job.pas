@@ -2,12 +2,12 @@ unit transym.job;
 
 interface
 
-uses TOCRDll,transym.int.job,transymocr;
+uses TOCRDll,
+    transym.int.job;
 
 type
   TOCRJob = class(TInterfacedObject, IOCRJob)
     private
-      Focr              : TTransymOCR;
       FstrfileName      : AnsiString;
       FOCRResults       : T_ByteArray;
       FJobNo            : Integer;
@@ -24,11 +24,8 @@ type
       function getObject():TObject;
       procedure setObject(obj:TObject);
     public
-//      FOCRResultsHeaderEx : PTOCRResultsHeader;
-//      FOCRResultItemsEx   : POCRResultsArrayEx;
-      constructor Create(Sender: TTransymOCR);
+      constructor Create();
       destructor Destroy(); override;
-      procedure Start();
       function DoJob(): Integer;
       function Initialize():Integer;
       function Shutdown():Integer;
@@ -36,9 +33,7 @@ type
       function GetResultSize(var size:Integer):Integer;
       function GetJobStatus(var JobStatus:Integer;var Progress:Single;orient:Integer):Integer;
       procedure GetResults(mode:Integer = TOCRGetResults_NORMAL);
-//      procedure GetResultsExInternal(mode:Integer = TOCRGetResults_NORMAL);
       procedure GetResults3(var results:PTOCRResultsHeader;var items:POCRResultsArray;mode:Integer = TOCRGetResults_NORMAL);
-//      procedure GetResultsEX(var results:PTOCRResultsEx;var items:POCRResultsArrayEx;mode:Integer = TOCRGetResults_NORMAL);
     published
       property jobNo       : Integer read getJobNo write setJobNo;
       property Filename    : AnsiString read getFilename write setFilename;
@@ -47,7 +42,9 @@ type
 
 implementation
 
-uses windows,sysutils,TypInfo,RTTI;
+uses windows,
+     sysutils
+     ;
 
 function TOCRJob.Initialize():Integer;
 begin
@@ -60,6 +57,7 @@ procedure TOCRJob.GetJobData(var info:PTOCRJobInfo2);
 begin
   info := @FInfo;
 end;
+
 
 function TOCRJob.Shutdown():Integer;
 begin
@@ -92,82 +90,32 @@ begin
   size := OCRJobResultsInf;
 end;
 
-{
-procedure TOCRJob.GetResultsExInternal(mode:Integer = TOCRGetResults_NORMAL);
-var
-  OCRJobResultsInf : Integer;
-  ret : Integer;
-begin
-  //ret := TOCRGetJobResults(jobNo, OCRJobResultsInf, Nil);
-  ret := GetResultSize(OCRJobResultsInf);
-  OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
- // SetLength(FOCRResultsEx, OCRJobResultsInf+1);
-  ret := TOCRGetJobResultsEx(FjobNo,mode, OCRJobResultsInf, Pointer(@FOCRResults[0]));
-  OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
-  FOCRResultsHeaderEx := @FOCRResults[0];
-//  results :=@FOCRResults[0];
-  OutputDebugString(PChar('NumItemsCount:'+IntToStr(FOCRResultsHeader.NumItems)+'|Addr:'+IntToStr(Integer(@Self))));
- // FOCRResultItemsEx   := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-//  items := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-end; }
-
 procedure TOCRJob.GetResults(mode:Integer);
 var
   OCRJobResultsInf : Integer;
   ret : Integer;
 begin
-  //ret := TOCRGetJobResults(jobNo, OCRJobResultsInf, Nil);
   ret := GetResultSize(OCRJobResultsInf);
   OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
   SetLength(FOCRResults, OCRJobResultsInf+1);
   ret := TOCRGetJobResults(FjobNo,OCRJobResultsInf, @FOCRResults[0]);
   OutputDebugString(PChar('OCRGetJobResults='+IntToStr(ret)+'| Size:'+IntToStr(OCRJobResultsInf)+'|Addr:'+IntToStr(Integer(@Self))));
   FOCRResultsHeader := @FOCRResults[0];
-//  results :=@FOCRResults[0];
   OutputDebugString(PChar('NumItemsCount:'+IntToStr(FOCRResultsHeader.NumItems)+'|Addr:'+IntToStr(Integer(@Self))));
   FOCRResultItems   := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-//  FOCRResultItemsEx := POCRResultsArrayEx(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-//  items := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
 end;
 
 procedure TOCRJob.GetResults3(var results:PTOCRResultsHeader;var items:POCRResultsArray;mode:Integer);
 var
   OCRJobResultsInf : Integer;
   ret : Integer;
-//  results : Integer;
   offset : Integer;
 begin
   FOCRResultsHeader := @FOCRResults[0];
   results           := @FOCRResults[0];
-//  OutputDebugString(PChar('header:'+IntToStr(Int64(@FOCRResults[0]))));
-//  OutputDebugString(PChar('header:'+IntToStr(Int64(@(results.Header)))));
   FOCRResultItems   := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
   items := FOCRResultItems;
-//  items := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-//  OutputDebugString(PChar('Items:'+IntToStr(Int64(items))));
-//   OutputDebugString(PChar('Items:'+IntToStr(Int64(@results.Items))));
 end;
-
-{
-procedure TOCRJob.GetResultsEX(var results:PTOCRResultsEx;var items:POCRResultsArrayEx;mode:Integer);
-var
-  OCRJobResultsInf : Integer;
-  ret : Integer;
-//  results : Integer;
-  offset : Integer;
-begin
-  FOCRResultsHeader := @FOCRResults[0];
-//  results           := @FOCRResults[0];
-//  OutputDebugString(PChar('header:'+IntToStr(Int64(@FOCRResults[0]))));
-//  OutputDebugString(PChar('header:'+IntToStr(Int64(@(results.Header)))));
-  FOCRResultItemsEx   := POCRResultsArrayEx(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-  results := PTOCRResultsEx(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-//  items := POCRResultsArray(Integer(@FOCRResults[0])+sizeof(TTOCRResultsHeader));
-//  OutputDebugString(PChar('Items:'+IntToStr(Int64(items))));
-//   OutputDebugString(PChar('Items:'+IntToStr(Int64(@results.Items))));
-//   Offset := Int64(@results.Items);
-end;  }
-
 
 function TOCRJob.getFilename():AnsiString;
 begin
@@ -218,11 +166,10 @@ begin
   OutputDebugString(PChar('TOCRJob'));
 end;
 
-constructor TOCRJob.Create(Sender:TTransymOCR);
+constructor TOCRJob.Create();
 var
   i : Integer;
 begin
-  Focr           := Sender;
   jobNo          := 0;
   Finfo.StructId := 0;
   Finfo.JobType  := 0;
@@ -260,15 +207,5 @@ procedure TOCRJob.setObject(obj:TObject);
 begin
   FExtraObject := obj;
 end;
-
-
-procedure TOCRJob.Start();
-var
-  job : IOCRJob;
-begin
-  job := Self;
-  Focr.processJob(job);
-end;
-
 
 end.

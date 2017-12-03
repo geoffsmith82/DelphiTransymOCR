@@ -7,7 +7,6 @@ uses
   System.Classes,
   TOCRDll,
   system.generics.collections,
-  vcl.dialogs,
   windows,
   SyncObjs,
   transym.int.job
@@ -48,16 +47,14 @@ type
     function UpdateStatus(): Integer;
     procedure HandleCompletedJob(JobNo: Integer);
   public
+    property OnOCRCompleted : TOnOCRComplete read GetOnOCRCompleted write SetOnOCRCompleted;
+    property OnOCRStatusUpdate : TOnOCRStatusUpdate read GetOnOCRStatusUpdate write SetOnOCRStatusUpdate;
     procedure SignalNewFileEvent();
     procedure SetUpdateSpeed(iSpeed:Cardinal);
     function GetUpdateSpeed():Cardinal;
     constructor Create(inQueue: TThreadedQueue<IOCRJob>;inSaveList: TList<IOCRJob>;CreateSuspended: Boolean);
     destructor Destroy(); override;
     procedure Execute; override;
-  published
-    property OnOCRCompleted : TOnOCRComplete read GetOnOCRCompleted write SetOnOCRCompleted;
-    property OnOCRStatusUpdate : TOnOCRStatusUpdate read GetOnOCRStatusUpdate write SetOnOCRStatusUpdate;
-
   end;
 
   TTransymOCR = class(TComponent)
@@ -78,7 +75,6 @@ type
     { Protected declarations }
   public
     { Public declarations }
-    function GetSlotCount():LongInt;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Start();
@@ -360,7 +356,7 @@ end;
 
 function TTransymOCR.NewJob():IOCRJob;
 begin
-  Result := TOCRJob.Create(Self);
+  Result := TOCRJob.Create();
   FSaveList.Add(Result);
 end;
 
@@ -408,21 +404,9 @@ begin
   Result := FWorker.OnOCRStatusUpdate;
 end;
 
-function TTransymOCR.GetSlotCount():LongInt;
-var
-  slotCount : LongInt;
-  ret : Integer;
-begin
-  slotCount := 0;
-  ret := TOCRGetJobDBInfo(slotCount);
-  OutputDebugString(PChar('OCRGetJobDBInfo'+IntToStr(ret)+' slotCount:'+IntToStr(slotCount)));
-  Result := slotCount;
-  Result := 2;
-end;
-
 function TTransymOCR.GetUpdateSpeed: Integer;
 begin
-  Result := TOCRThread(FWorker).GetUpdateSpeed;
+  Result := FWorker.GetUpdateSpeed;
 end;
 
 end.

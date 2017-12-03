@@ -11,7 +11,6 @@ type
     procedure setJobNo(JobNoToSet:Integer);
     function getFilename():AnsiString;
     procedure setFilename(const str:AnsiString);
-    procedure Start();
     function getObject():TObject;
     procedure setObject(obj:TObject);
     function DoJob(): Integer;
@@ -25,7 +24,6 @@ type
     procedure GetResults3(var results:PTOCRResultsHeader;var items:POCRResultsArray;mode:Integer = TOCRGetResults_NORMAL);
 //    procedure GetResultsEX(var results:PTOCRResultsEx;var items:POCRResultsArrayEx;mode:Integer = TOCRGetResults_NORMAL);
     property jobNo    : Integer read getJobNo write setJobNo;
-//    property info     : TTOCRJobInfo2 read getJobInfo write setJobInfo;
     property Filename : AnsiString read getFilename write setFilename;
     property ExtraObject   : TObject read getObject write setObject;
   end;

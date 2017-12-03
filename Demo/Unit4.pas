@@ -3,9 +3,21 @@ unit Unit4;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, transymocr, Vcl.StdCtrls,tocrdll,
-  Vcl.ComCtrls,system.generics.collections, Vcl.FileCtrl,transym.int.job;
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Classes,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  transymocr,
+  Vcl.StdCtrls,
+  tocrdll,
+  Vcl.ComCtrls,
+  system.generics.collections,
+  Vcl.FileCtrl,
+  transym.int.job
+  ;
 
 type
   TForm4 = class(TForm)
@@ -19,9 +31,7 @@ type
     DirectoryListBox1: TDirectoryListBox;
     procedure TransymOCR1OCRCompleted(var job:IOCRJob);
     procedure FormCreate(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure TransymOCROCRStatusUpdate(var job:IOCRJob; JobStatus: Integer;
-      Progress: Single);
+    procedure TransymOCROCRStatusUpdate(var job:IOCRJob; JobStatus: Integer; Progress: Single);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -56,21 +66,8 @@ begin
      job.GetJobData(jobdata);
      jobData.ProcessOptions.SectioningOn := True;
      job.ExtraObject := item;
-     job.Start;
+     TransymOCR.processJob(job);
     end;
-end;
-
-procedure TForm4.Button2Click(Sender: TObject);
-var
-  job  : IOCRJob;
-  item : TListItem;
-begin
-  job             := TransymOCR.NewJob;
-  job.Filename    := 'C:\Program Files (x86)\Transym\TOCR\Viewer\Samples\Sample.tif';
-  item            := Listview1.Items.Add;
-  item.Caption    := ExtractFilename(job.Filename) +' ' + 'Queued';
-  job.ExtraObject := item;
-  job.Start;
 end;
 
 procedure TForm4.Button3Click(Sender: TObject);
@@ -93,7 +90,7 @@ begin
         item             := Listview1.Items.Add;
         item.Caption     := ExtractFilename(job.Filename) +' ' + 'Queued';
         job.ExtraObject  := item;
-        job.Start;
+        TransymOCR.processJob(job);
       end;
   until FindNext(searchResult) <> 0;
 
